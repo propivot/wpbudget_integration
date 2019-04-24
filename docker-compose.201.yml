@@ -1,0 +1,66 @@
+version: "3.4"
+
+services:
+    authsvc:
+        image: propivot/wpbudget:auth_develop
+        container_name: wpbudget_auth
+        environment:
+          - CLIENT_ENDPOINT_HOST=188.167.163.38:5002
+          - ENDPOINT_HOST=188.167.163.38:5001
+          - AUTH_ENDPOINT_HOST=188.167.163.38:5000
+        ports:
+          - "5000:80"
+        networks:
+         - wpbudgetnet
+
+    webapi:
+        image: propivot/wpbudget:webapi_develop
+        container_name: wpbudget_webapi
+        environment:
+          - AUTH_ENDPOINT_HOST=188.167.163.38:5000
+          - CLIENT_ENDPOINT_HOST=188.167.163.38:5002
+          - DB_ENDPOINT_HOST=wpbudgetdb
+          - DB_USER_PASSWORD=wpbudget2019
+        ports:
+          - "5001:80"
+        networks:
+          - wpbudgetnet
+        volumes:
+          - wpbudget-sql-migrations:/migrations
+
+    jsclient:
+        image: propivot/wpbudget:nginx_develop
+        container_name: wpbudget_client
+        environment:
+          - AUTH_ENDPOINT_HOST=188.167.163.38:5000
+          - API_ENDPOINT_HOST=188.167.163.38:5001
+          - CLIENT_ENDPOINT_HOST=188.167.163.38:5002
+        networks:
+          - wpbudgetnet
+        ports:
+          - "5002:80"
+    #      - "80:80"
+    #    depends_on:
+    #      - authsvc
+    #      - webapi
+    
+    wpbudgetdb:
+      image: propivot/mssql17ex
+      container_name: wpbudget_db
+      environment:
+        - ACCEPT_EULA=Y
+        - MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>
+        - MSSQL_PID=Express
+      networks:
+        - wpbudgetnet
+      ports:
+        - "1433:1433"
+      volumes:
+        - wpbudget-sql-volume:/var/opt/mssql
+
+networks:
+    wpbudgetnet:
+        driver: bridge
+volumes:
+  wpbudget-sql-volume:
+  wpbudget-sql-migrations:
